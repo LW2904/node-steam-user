@@ -20,7 +20,7 @@ SteamUser.prototype.getEncryptedAppTicket = function(appid, userData, callback) 
 		userData = new Buffer(0);
 	}
 
-	this._send(SteamUser.EMsg.ClientRequestEncryptedAppTicket, {"app_id": appid, "userdata": userData}, (body) => {
+	this._send(SteamUser.EMsg.ClientRequestEncryptedAppTicket, {'app_id': appid, 'userdata': userData}, (body) => {
 		if (body.eresult != SteamUser.EResult.OK) {
 			callback(Helpers.eresultError(body.eresult));
 			return;
@@ -28,12 +28,12 @@ SteamUser.prototype.getEncryptedAppTicket = function(appid, userData, callback) 
 
 		if (body.app_id != appid) {
 			// Don't know if this can even happen
-			callback(new Error("Steam did not send an appticket for the requested appid"));
+			callback(new Error('Steam did not send an appticket for the requested appid'));
 			return;
 		}
 
 		if (!body.encrypted_app_ticket) {
-			callback(new Error("No appticket in response"));
+			callback(new Error('No appticket in response'));
 			return;
 		}
 
@@ -49,18 +49,18 @@ SteamUser.prototype.getEncryptedAppTicket = function(appid, userData, callback) 
  */
 SteamUser.parseEncryptedAppTicket = function(ticket, encryptionKey) {
 	try {
-		let outer = Schema.EncryptedAppTicket.decode(ticket);
-		let key = typeof encryptionKey === 'string' ? Buffer.from(encryptionKey, 'hex') : encryptionKey;
-		let decrypted = SteamCrypto.symmetricDecrypt(outer.encrypted_ticket.toBuffer(), key);
+		const outer = Schema.EncryptedAppTicket.decode(ticket);
+		const key = typeof encryptionKey === 'string' ? Buffer.from(encryptionKey, 'hex') : encryptionKey;
+		const decrypted = SteamCrypto.symmetricDecrypt(outer.encrypted_ticket.toBuffer(), key);
 
 		if (CRC32.unsigned(decrypted) != outer.crc_encryptedticket) {
 			return null;
 		}
 
 		// the beginning is the user-supplied data
-		let userData = decrypted.slice(0, outer.cb_encrypteduserdata);
-		let ownershipTicketLength = decrypted.readUInt32LE(outer.cb_encrypteduserdata);
-		let ownershipTicket = SteamUser.parseAppTicket(decrypted.slice(outer.cb_encrypteduserdata, outer.cb_encrypteduserdata + ownershipTicketLength));
+		const userData = decrypted.slice(0, outer.cb_encrypteduserdata);
+		const ownershipTicketLength = decrypted.readUInt32LE(outer.cb_encrypteduserdata);
+		const ownershipTicket = SteamUser.parseAppTicket(decrypted.slice(outer.cb_encrypteduserdata, outer.cb_encrypteduserdata + ownershipTicketLength));
 		if (ownershipTicket) {
 			ownershipTicket.userData = userData;
 		}
@@ -68,11 +68,11 @@ SteamUser.parseEncryptedAppTicket = function(ticket, encryptionKey) {
 		let remainder = decrypted.slice(outer.cb_encrypteduserdata + ownershipTicketLength);
 		if (remainder.length >= 8 + 20) {
 			// salted sha1 hash
-			let salt = remainder.slice(0, 8);
-			let hash = remainder.slice(8, 28);
+			const salt = remainder.slice(0, 8);
+			const hash = remainder.slice(8, 28);
 			remainder = remainder.slice(28);
 
-			let sha1 = Crypto.createHash('sha1');
+			const sha1 = Crypto.createHash('sha1');
 			sha1.update(decrypted.slice(0, outer.cb_encrypteduserdata + ownershipTicketLength))
 				.update(salt);
 			if (!hash.equals(sha1.digest())) {
@@ -100,10 +100,10 @@ SteamUser.parseAppTicket = function(ticket) {
 		ticket = ByteBuffer.wrap(ticket, ByteBuffer.LITTLE_ENDIAN);
 	}
 
-	let details = {};
+	const details = {};
 
 	try {
-		let initialLength = ticket.readUint32();
+		const initialLength = ticket.readUint32();
 		if (initialLength == 20) {
 			// This is a full appticket, with a GC token and session header (in addition to ownership ticket)
 			details.authTicket = ticket.slice(ticket.offset - 4, ticket.offset - 4 + 52).toBuffer(); // this is the part that's passed back to Steam for validation
@@ -133,8 +133,8 @@ SteamUser.parseAppTicket = function(ticket) {
 		}
 
 		// Start reading the ownership ticket
-		let ownershipTicketOffset = ticket.offset;
-		let ownershipTicketLength = ticket.readUint32(); // including itself, for some reason
+		const ownershipTicketOffset = ticket.offset;
+		const ownershipTicketLength = ticket.readUint32(); // including itself, for some reason
 		if (ownershipTicketOffset + ownershipTicketLength != ticket.limit && ownershipTicketOffset + ownershipTicketLength + 128 != ticket.limit) {
 			return null;
 		}
@@ -158,7 +158,7 @@ SteamUser.parseAppTicket = function(ticket) {
 
 		details.dlc = [];
 
-		let dlcCount = ticket.readUint16();
+		const dlcCount = ticket.readUint16();
 		for (i = 0; i < dlcCount; i++) {
 			dlc = {};
 			dlc.appID = ticket.readUint32();
@@ -179,7 +179,7 @@ SteamUser.parseAppTicket = function(ticket) {
 			details.signature = ticket.slice(ticket.offset, ticket.offset + 128).toBuffer();
 		}
 
-		let date = new Date();
+		const date = new Date();
 		details.isExpired = details.ownershipTicketExpires < date;
 		details.hasValidSignature = !!details.signature && SteamCrypto.verifySignature(ticket.slice(ownershipTicketOffset, ownershipTicketOffset + ownershipTicketLength).toBuffer(), details.signature);
 		details.isValid = !details.isExpired && (!details.signature || details.hasValidSignature);
@@ -202,8 +202,8 @@ SteamUser.prototype.getAuthSessionTicket = function(appid, callback) {
 			return;
 		}
 
-		let buildToken = () => {
-			let gcToken = this._gcTokens.splice(0, 1)[0];
+		const buildToken = () => {
+			const gcToken = this._gcTokens.splice(0, 1)[0];
 			let buffer = new ByteBuffer(4 + gcToken.length + 4 + 24 + 4 + ticket.length, ByteBuffer.LITTLE_ENDIAN);
 			buffer.writeUint32(gcToken.length);
 			buffer.append(gcToken);
@@ -235,21 +235,21 @@ SteamUser.prototype.getAuthSessionTicket = function(appid, callback) {
 };
 
 SteamUser.prototype.getAppOwnershipTicket = function(appid, callback) {
-	let getNewTicket = () => {
-		this._send(SteamUser.EMsg.ClientGetAppOwnershipTicket, {"app_id": appid}, (body) => {
+	const getNewTicket = () => {
+		this._send(SteamUser.EMsg.ClientGetAppOwnershipTicket, {'app_id': appid}, (body) => {
 			if (body.eresult != SteamUser.EResult.OK) {
 				callback(Helpers.eresultError(body.eresult));
 				return;
 			}
 
 			if (body.app_id != appid) {
-				callback(new Error("Cannot get app ownership ticket"));
+				callback(new Error('Cannot get app ownership ticket'));
 				return;
 			}
 
-			let ticket = body.ticket.toBuffer();
+			const ticket = body.ticket.toBuffer();
 			if (ticket && ticket.length > 10 && this.options.saveAppTickets && this.storage) {
-				this.storage.saveFile("appOwnershipTicket_" + this.steamID + "_" + appid + ".bin", ticket);
+				this.storage.saveFile('appOwnershipTicket_' + this.steamID + '_' + appid + '.bin', ticket);
 			}
 
 			callback(null, body.ticket.toBuffer());
@@ -258,9 +258,9 @@ SteamUser.prototype.getAppOwnershipTicket = function(appid, callback) {
 
 	// See if we have one saved
 	if (this.storage) {
-		this.storage.readFile("appOwnershipTicket_" + this.steamID + "_" + appid + ".bin", (err, file) => {
+		this.storage.readFile('appOwnershipTicket_' + this.steamID + '_' + appid + '.bin', (err, file) => {
 			if (!err && file) {
-				let parsed = SteamUser.parseAppTicket(file);
+				const parsed = SteamUser.parseAppTicket(file);
 				// Only return the saved ticket if it has a valid signature, expires more than 6 hours from now, and has the same external IP as we have right now.
 				if (parsed && parsed.isValid && parsed.ownershipTicketExpires - Date.now() >= (1000 * 60 * 60 * 6) && parsed.ownershipTicketExternalIP == this.publicIP) {
 					callback(null, file);
@@ -282,13 +282,13 @@ SteamUser.prototype.validateAuthTickets = function(appid, tickets, callback) {
 		tickets = [tickets];
 	}
 
-	let obj = {
-		"tokens_left": (this._gcTokens ? this._gcTokens.length : 0),
-		"last_request_seq": this._authSeqMe,
-		"last_request_seq_from_server": this._authSeqThem,
-		"tickets": [],
-		"app_ids": [],
-		"message_sequence": ++this._authSeqMe
+	const obj = {
+		'tokens_left': (this._gcTokens ? this._gcTokens.length : 0),
+		'last_request_seq': this._authSeqMe,
+		'last_request_seq_from_server': this._authSeqThem,
+		'tickets': [],
+		'app_ids': [],
+		'message_sequence': ++this._authSeqMe
 	};
 
 	tickets.forEach((ticket, idx) => {
@@ -304,7 +304,7 @@ SteamUser.prototype.validateAuthTickets = function(appid, tickets, callback) {
 			ticket = SteamUser.parseAppTicket(ticket);
 			if (!ticket) {
 				if (callback) {
-					callback(new Error("Ticket " + idx + " is invalid"));
+					callback(new Error('Ticket ' + idx + ' is invalid'));
 				}
 
 				return;
@@ -320,15 +320,15 @@ SteamUser.prototype.validateAuthTickets = function(appid, tickets, callback) {
 		sid.accountid = authTicket.readUInt32LE(12);
 		sid = sid.getSteamID64();
 
-		let isOurTicket = (sid == this.steamID.getSteamID64());
+		const isOurTicket = (sid == this.steamID.getSteamID64());
 
 		obj.tickets.push({
-			"estate": isOurTicket ? 0 : 1,
-			"steamid": isOurTicket ? 0 : sid,
-			"gameid": appid,
-			"h_steam_pipe": this._hSteamPipe,
-			"ticket_crc": CRC32.unsigned(authTicket),
-			"ticket": authTicket
+			'estate': isOurTicket ? 0 : 1,
+			'steamid': isOurTicket ? 0 : sid,
+			'gameid': appid,
+			'h_steam_pipe': this._hSteamPipe,
+			'ticket_crc': CRC32.unsigned(authTicket),
+			'ticket': authTicket
 		});
 
 		obj.app_ids.push(appid);
@@ -354,7 +354,7 @@ SteamUser.prototype.cancelAuthTicket = function(appid, callback) {
 // Handlers
 
 SteamUser.prototype._handlers[SteamUser.EMsg.ClientGameConnectTokens] = function(body) {
-	this.emit('debug', "Received " + body.tokens.length + " game connect tokens");
+	this.emit('debug', 'Received ' + body.tokens.length + ' game connect tokens');
 	body.tokens.forEach((token) => {
 		this._gcTokens.push(token.toBuffer());
 	});
@@ -363,19 +363,19 @@ SteamUser.prototype._handlers[SteamUser.EMsg.ClientGameConnectTokens] = function
 };
 
 SteamUser.prototype._handlers[SteamUser.EMsg.ClientTicketAuthComplete] = function(body) {
-	let eventBody = {
-		"steamID": new SteamID(body.steam_id.toString()),
-		"appOwnerSteamID": body.owner_steam_id.toString() == "0" ? null : new SteamID(body.owner_steam_id.toString()),
-		"appID": parseInt(body.game_id.toString(), 10),
-		"ticketCrc": body.ticket_crc,
-		"state": body.estate,
-		"authSessionResponse": body.eauth_session_response
+	const eventBody = {
+		'steamID': new SteamID(body.steam_id.toString()),
+		'appOwnerSteamID': body.owner_steam_id.toString() == '0' ? null : new SteamID(body.owner_steam_id.toString()),
+		'appID': parseInt(body.game_id.toString(), 10),
+		'ticketCrc': body.ticket_crc,
+		'state': body.estate,
+		'authSessionResponse': body.eauth_session_response
 	};
 
-	let eventName = "authTicketValidation";
+	let eventName = 'authTicketValidation';
 	if (eventBody.steamID.type == 0) {
 		// this appears to happen when it's our own ticket?
-		eventName = "authTicketStatus";
+		eventName = 'authTicketStatus';
 		eventBody.steamID = this.steamID;
 	}
 

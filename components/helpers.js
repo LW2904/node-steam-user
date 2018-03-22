@@ -29,7 +29,7 @@ exports.steamID = function(input) {
  * @returns {string}
  */
 exports.ipIntToString = function(input) {
-	return ((input >> 24) & 0xFF) + "." + ((input >> 16) & 0xFF) + "." + ((input >> 8) & 0xFF) + "." + (input & 0xFF);
+	return ((input >> 24) & 0xFF) + '.' + ((input >> 16) & 0xFF) + '.' + ((input >> 8) & 0xFF) + '.' + (input & 0xFF);
 };
 
 /**
@@ -72,7 +72,7 @@ exports.eresultError = function(eresult) {
 		return null;
 	}
 
-	var err = new Error(EResult[eresult] || ("Error " + eresult));
+	var err = new Error(EResult[eresult] || ('Error ' + eresult));
 	err.eresult = eresult;
 	return err;
 };
@@ -83,101 +83,101 @@ exports.eresultError = function(eresult) {
 exports.getOsType = function() {
 	var Os = require('os');
 	switch (Os.platform()) {
-		case 'darwin':
-			var match = Os.release().match(/Darwin Kernel Version (\d+)\.(\d+)\.(\d+)/);
-			if (!match) {
-				return EOSType.MacOSUnknown;
-			}
-
-			if (match[1] == 10 && match[2] == 0 && match[3] == 0) {
-				return EOSType.MacOS106; // Snow Leopard
-			}
-
-			if (match[1] == 11 && match[2] == 3) {
-				return EOSType.MacOS107; // Lion
-			}
-
-			if (match[1] == 12 && match[2] == 2) {
-				return EOSType.MacOS108; // Mountain Lion
-			}
-
-			if (match[1] == 13 && match[2] == 0) {
-				return EOSType.MacOS109; // Mavericks
-			}
-
-			if (match[1] == 14 && match[2] == 0) {
-				return EOSType.MacOS1010; // Yosemite
-			}
-
+	case 'darwin':
+		var match = Os.release().match(/Darwin Kernel Version (\d+)\.(\d+)\.(\d+)/);
+		if (!match) {
 			return EOSType.MacOSUnknown;
+		}
 
-		case 'win32':
-			// http://prajwaldesai.com/windows-operating-system-version-numbers/
-			var verParts = Os.release().split('.');
-			if (verParts.length < 3) {
-				return EOSType.WinUnknown;
-			}
+		if (match[1] == 10 && match[2] == 0 && match[3] == 0) {
+			return EOSType.MacOS106; // Snow Leopard
+		}
 
-			if (verParts[0] == 3) {
-				return EOSType.Win311; // yeah right
-			}
+		if (match[1] == 11 && match[2] == 3) {
+			return EOSType.MacOS107; // Lion
+		}
 
-			if (verParts[0] == 4 && parseInt(verParts[1], 10) <= 3) {
-				return EOSType.Win95;
-			}
+		if (match[1] == 12 && match[2] == 2) {
+			return EOSType.MacOS108; // Mountain Lion
+		}
 
-			if (verParts[0] == 4 && verParts[1] == 10) {
-				return EOSType.Win98;
-			}
+		if (match[1] == 13 && match[2] == 0) {
+			return EOSType.MacOS109; // Mavericks
+		}
 
-			if (verParts[0] == 4 && verParts[1] == 90) {
-				return EOSType.WinME;
-			}
+		if (match[1] == 14 && match[2] == 0) {
+			return EOSType.MacOS1010; // Yosemite
+		}
 
-			if (verParts[0] == 5 && verParts[1] == "00" && verParts[2] == 1515) {
-				return EOSType.WinNT;
-			}
+		return EOSType.MacOSUnknown;
 
-			if (verParts[0] == 5 && parseInt(verParts[1], 10) < 1) {
-				return EOSType.Win200;
-			}
-
-			if (verParts[0] == 5 && verParts[1] == 1) {
-				return EOSType.WinXP;
-			}
-
-			if (verParts[0] == 5 && verParts[1] == 2) {
-				return EOSType.Win2003;
-			}
-
-			if (verParts[0] == 6 && verParts[1] == 0 && verParts[2] == 6001) {
-				return EOSType.Win2008;
-			}
-
-			if (verParts[0] == 6 && verParts[1] == 0) {
-				return EOSType.WinVista;
-			}
-
-			if (verParts[0] == 6 && verParts[1] == 1) {
-				return EOSType.Win7;
-			}
-
-			if (verParts[0] == 6 && verParts[1] == 2) {
-				return EOSType.Win8;
-			}
-
-			if (verParts[0] == 6 && verParts[1] == 3) {
-				return EOSType.Win81;
-			}
-
-			if (verParts[0] == 10) {
-				return EOSType.Win10;
-			}
-
+	case 'win32':
+		// http://prajwaldesai.com/windows-operating-system-version-numbers/
+		var verParts = Os.release().split('.');
+		if (verParts.length < 3) {
 			return EOSType.WinUnknown;
+		}
 
-		default:
-			return EOSType.LinuxUnknown;
+		if (verParts[0] == 3) {
+			return EOSType.Win311; // yeah right
+		}
+
+		if (verParts[0] == 4 && parseInt(verParts[1], 10) <= 3) {
+			return EOSType.Win95;
+		}
+
+		if (verParts[0] == 4 && verParts[1] == 10) {
+			return EOSType.Win98;
+		}
+
+		if (verParts[0] == 4 && verParts[1] == 90) {
+			return EOSType.WinME;
+		}
+
+		if (verParts[0] == 5 && verParts[1] == '00' && verParts[2] == 1515) {
+			return EOSType.WinNT;
+		}
+
+		if (verParts[0] == 5 && parseInt(verParts[1], 10) < 1) {
+			return EOSType.Win200;
+		}
+
+		if (verParts[0] == 5 && verParts[1] == 1) {
+			return EOSType.WinXP;
+		}
+
+		if (verParts[0] == 5 && verParts[1] == 2) {
+			return EOSType.Win2003;
+		}
+
+		if (verParts[0] == 6 && verParts[1] == 0 && verParts[2] == 6001) {
+			return EOSType.Win2008;
+		}
+
+		if (verParts[0] == 6 && verParts[1] == 0) {
+			return EOSType.WinVista;
+		}
+
+		if (verParts[0] == 6 && verParts[1] == 1) {
+			return EOSType.Win7;
+		}
+
+		if (verParts[0] == 6 && verParts[1] == 2) {
+			return EOSType.Win8;
+		}
+
+		if (verParts[0] == 6 && verParts[1] == 3) {
+			return EOSType.Win81;
+		}
+
+		if (verParts[0] == 10) {
+			return EOSType.Win10;
+		}
+
+		return EOSType.WinUnknown;
+
+	default:
+		return EOSType.LinuxUnknown;
 	}
 };
 
@@ -186,7 +186,7 @@ exports.stringifyLongs = function(obj) {
 		if (obj instanceof ByteBuffer.Long) {
 			return obj.toString();
 		} else {
-			for (let i in obj) {
+			for (const i in obj) {
 				if (obj.hasOwnProperty(i)) {
 					obj[i] = exports.stringifyLongs(obj[i]);
 				}

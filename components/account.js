@@ -1,11 +1,10 @@
 var SteamUser = require('../index.js');
 var Helpers = require('./helpers.js');
-var SteamID = require('steamid');
 var ByteBuffer = require('bytebuffer');
 var BinaryKVParser = require('binarykvparser');
 
 SteamUser.prototype.createAccount = function(accountName, password, email, callback) {
-	throw new Error("Creating accounts through node-steam-user is no longer possible due to Steam changes.");
+	throw new Error('Creating accounts through node-steam-user is no longer possible due to Steam changes.');
 };
 
 SteamUser.prototype.requestValidationEmail = function(callback) {
@@ -21,7 +20,7 @@ SteamUser.prototype.requestValidationEmail = function(callback) {
 };
 
 SteamUser.prototype.getSteamGuardDetails = function(callback) {
-	this._sendUnified("Credentials.GetSteamGuardDetails#1", {}, false, function(body) {
+	this._sendUnified('Credentials.GetSteamGuardDetails#1', {}, false, function(body) {
 		var canTrade = true;
 		var hasHadTwoFactorForWeek = (body.is_twofactor_enabled && body.timestamp_twofactor_enabled && Math.floor(Date.now() / 1000) - body.timestamp_twofactor_enabled >= (60 * 60 * 24 * 7));
 
@@ -51,7 +50,7 @@ SteamUser.prototype.getSteamGuardDetails = function(callback) {
 };
 
 SteamUser.prototype.getCredentialChangeTimes = function(callback) {
-	this._sendUnified("Credentials.GetCredentialChangeTimeDetails#1", {}, false, function(body) {
+	this._sendUnified('Credentials.GetCredentialChangeTimeDetails#1', {}, false, function(body) {
 		callback(body.timestamp_last_password_change ? new Date(body.timestamp_last_password_change * 1000) : null,
 			body.timestamp_last_password_reset ? new Date(body.timestamp_last_password_reset * 1000) : null,
 			body.timestamp_last_email_change ? new Date(body.timestamp_last_email_change * 1000) : null);
@@ -59,7 +58,7 @@ SteamUser.prototype.getCredentialChangeTimes = function(callback) {
 };
 
 SteamUser.prototype.getAuthSecret = function(callback) {
-	this._sendUnified("Credentials.GetAccountAuthSecret#1", {}, false, function(body) {
+	this._sendUnified('Credentials.GetAccountAuthSecret#1', {}, false, function(body) {
 		callback(body.secret_id, body.secret.toBuffer());
 	});
 };
@@ -96,7 +95,7 @@ SteamUser.prototype.requestPasswordChangeEmail = function(currentPassword, callb
 
 SteamUser.prototype.changePassword = function(oldPassword, newPassword, code, callback) {
 	var buf = new ByteBuffer(1 + oldPassword.length + 1 + newPassword.length + 1 + code.length + 1, ByteBuffer.LITTLE_ENDIAN);
-	buf.writeCString(""); // unknown
+	buf.writeCString(''); // unknown
 	buf.writeCString(oldPassword);
 	buf.writeCString(newPassword);
 	buf.writeCString(code);
@@ -112,14 +111,14 @@ SteamUser.prototype.changePassword = function(oldPassword, newPassword, code, ca
 
 SteamUser.prototype.changeEmail = function(options, callback) {
 	this._send(SteamUser.EMsg.ClientEmailChange4, {
-		"password": options.password,
-		"email": options.newEmail || options.email,
-		"code": options.code,
-		"final": !!options.code,
-		"newmethod": true,
-		"twofactor_code": options.twoFactorCode,
-		"sms_code": options.smsCode,
-		"client_supports_sms": true // this appears to be ignored; it asks for an SMS code regardless of value
+		'password': options.password,
+		'email': options.newEmail || options.email,
+		'code': options.code,
+		'final': !!options.code,
+		'newmethod': true,
+		'twofactor_code': options.twoFactorCode,
+		'sms_code': options.smsCode,
+		'client_supports_sms': true // this appears to be ignored; it asks for an SMS code regardless of value
 	}, function(body) {
 		if (!callback) {
 			return;
@@ -139,12 +138,12 @@ SteamUser.prototype.changeEmail = function(options, callback) {
 SteamUser.prototype._handlers[SteamUser.EMsg.ClientAccountInfo] = function(body) {
 	// Steam appears to send this twice on logon. Let's collapse it down to one event.
 	var info = {
-		"name": body.persona_name,
-		"country": body.ip_country,
-		"authedMachines": body.count_authed_computers,
-		"flags": body.account_flags,
-		"facebookID": body.facebook_id ? body.facebook_id.toString() : null,
-		"facebookName": body.facebook_name
+		'name': body.persona_name,
+		'country': body.ip_country,
+		'authedMachines': body.count_authed_computers,
+		'flags': body.account_flags,
+		'facebookID': body.facebook_id ? body.facebook_id.toString() : null,
+		'facebookName': body.facebook_name
 	};
 
 	if (this.accountInfo) {
@@ -169,18 +168,18 @@ SteamUser.prototype._handlers[SteamUser.EMsg.ClientAccountInfo] = function(body)
 SteamUser.prototype._handlers[SteamUser.EMsg.ClientEmailAddrInfo] = function(body) {
 	this.emit('emailInfo', body.email_address, body.email_is_validated);
 	this.emailInfo = {
-		"address": body.email_address,
-		"validated": body.email_is_validated
+		'address': body.email_address,
+		'validated': body.email_is_validated
 	};
 };
 
 SteamUser.prototype._handlers[SteamUser.EMsg.ClientIsLimitedAccount] = function(body) {
 	this.emit('accountLimitations', body.bis_limited_account, body.bis_community_banned, body.bis_locked_account, body.bis_limited_account_allowed_to_invite_friends);
 	this.limitations = {
-		"limited": body.bis_limited_account,
-		"communityBanned": body.bis_community_banned,
-		"locked": body.bis_locked_account,
-		"canInviteFriends": body.bis_limited_account_allowed_to_invite_friends
+		'limited': body.bis_limited_account,
+		'communityBanned': body.bis_community_banned,
+		'locked': body.bis_locked_account,
+		'canInviteFriends': body.bis_limited_account_allowed_to_invite_friends
 	};
 };
 
@@ -211,9 +210,9 @@ SteamUser.prototype._handlers[SteamUser.EMsg.ClientVACBanStatus] = function(body
 	this.emit('vacBans', numBans, appids, ranges);
 
 	this.vac = {
-		"numBans": numBans,
-		"appids": appids,
-		"ranges": ranges
+		'numBans': numBans,
+		'appids': appids,
+		'ranges': ranges
 	};
 };
 
@@ -224,9 +223,9 @@ SteamUser.prototype._handlers[SteamUser.EMsg.ClientWalletInfoUpdate] = function(
 
 	this.emit('wallet', body.has_wallet, body.currency, body.balance / 100);
 	this.wallet = {
-		"hasWallet": body.has_wallet,
-		"currency": body.currency,
-		"balance": body.balance / 100
+		'hasWallet': body.has_wallet,
+		'currency': body.currency,
+		'balance': body.balance / 100
 	};
 };
 

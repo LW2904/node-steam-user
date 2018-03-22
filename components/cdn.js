@@ -1,13 +1,13 @@
-var AdmZip = require('adm-zip');
-var ByteBuffer = require('bytebuffer');
-var crc32 = require('buffer-crc32');
-var EventEmitter = require('events').EventEmitter;
-var fs = require('fs');
-var LZMA = require('lzma');
-var SteamCrypto = require('@doctormckay/steam-crypto');
-var SteamUser = require('../index.js');
-var Helpers = require('./helpers.js');
-var ContentManifest = require('./content_manifest.js');
+const AdmZip = require('adm-zip');
+const ByteBuffer = require('bytebuffer');
+const crc32 = require('buffer-crc32');
+const {EventEmitter} = require('events');
+const fs = require('fs');
+const LZMA = require('lzma');
+const SteamCrypto = require('@doctormckay/steam-crypto');
+const SteamUser = require('../index.js');
+const Helpers = require('./helpers.js');
+const ContentManifest = require('./content_manifest.js');
 
 const VZIP_HEADER = 0x5A56;
 const VZIP_FOOTER = 0x767A;
@@ -25,14 +25,14 @@ SteamUser.prototype.getContentServers = function(callback) {
 	var list = this.steamServers[SteamUser.EServerType.CS];
 
 	if (!list || list.length == 0) {
-		callback(new Error("Server list not yet available"));
+		callback(new Error('Server list not yet available'));
 		return;
 	}
 
 	// pick a random one
 	var server = list[Math.floor(Math.random() * list.length)];
 	var self = this;
-	download("http://" + Helpers.ipIntToString(server.server_ip) + ":" + server.server_port + "/serverlist/" + this.cellID + "/20/", "cs.steamcontent.com", function(err, res) {
+	download('http://' + Helpers.ipIntToString(server.server_ip) + ':' + server.server_port + '/serverlist/' + this.cellID + '/20/', 'cs.steamcontent.com', function(err, res) {
 		if (err) {
 			callback(err);
 			return;
@@ -45,12 +45,12 @@ SteamUser.prototype.getContentServers = function(callback) {
 		try {
 			var parsed = require('vdf').parse(res.data.toString('utf8'));
 		} catch (ex) {
-			callback(new Error("Malformed response"));
+			callback(new Error('Malformed response'));
 			return;
 		}
 
 		if (!parsed || !parsed.serverlist || !parsed.serverlist[0]) {
-			callback(new Error("Malformed response"));
+			callback(new Error('Malformed response'));
 			return;
 		}
 
@@ -76,27 +76,27 @@ SteamUser.prototype.getDepotDecryptionKey = function(appID, depotID, callback) {
 	// Cached locally?
 	var self = this;
 
-	this.storage.readFile("depot_key_" + appID + "_" + depotID + ".bin", function(err, file) {
+	this.storage.readFile('depot_key_' + appID + '_' + depotID + '.bin', function(err, file) {
 		if (file && Math.floor(Date.now() / 1000) - file.readUInt32LE(0) < (60 * 60 * 24 * 14)) {
 			callback(null, file.slice(4));
 			return;
 		}
 
-		self._send(SteamUser.EMsg.ClientGetDepotDecryptionKey, {"depot_id": depotID, "app_id": appID}, function(body) {
+		self._send(SteamUser.EMsg.ClientGetDepotDecryptionKey, {'depot_id': depotID, 'app_id': appID}, function(body) {
 			if (body.eresult != SteamUser.EResult.OK) {
 				callback(Helpers.eresultError(body.eresult));
 				return;
 			}
 
 			if (body.depot_id != depotID) {
-				callback(new Error("Did not receive decryption key for correct depot"));
+				callback(new Error('Did not receive decryption key for correct depot'));
 				return;
 			}
 
 			var key = body.depot_encryption_key.toBuffer();
 			var file = Buffer.concat([new Buffer(4), key]);
 			file.writeUInt32LE(Math.floor(Date.now() / 1000), 0);
-			self.storage.writeFile("depot_key_" + appID + "_" + depotID + ".bin", file, function() {
+			self.storage.writeFile('depot_key_' + appID + '_' + depotID + '.bin', file, function() {
 				callback(null, body.depot_encryption_key.toBuffer());
 			});
 		});
@@ -117,15 +117,15 @@ SteamUser.prototype.getCDNAuthToken = function(appID, depotID, hostname, callbac
 	}
 
 	var self = this;
-	this._send(SteamUser.EMsg.ClientGetCDNAuthToken, {"app_id": appID, "depot_id": depotID, "host_name": hostname}, function(body) {
+	this._send(SteamUser.EMsg.ClientGetCDNAuthToken, {'app_id': appID, 'depot_id': depotID, 'host_name': hostname}, function(body) {
 		if (body.eresult != SteamUser.EResult.OK) {
 			callback(Helpers.eresultError(body.eresult));
 			return;
 		}
 
 		self._contentServerTokens[depotID + '_' + hostname] = {
-			"token": body.token,
-			"expires": new Date(body.expiration_time * 1000)
+			'token': body.token,
+			'expires': new Date(body.expiration_time * 1000)
 		};
 		callback(null, body.token, new Date(body.expiration_time * 1000));
 	});
@@ -187,7 +187,7 @@ SteamUser.prototype.getRawManifest = function(appID, depotID, manifestID, callba
 		}
 
 		var server = servers[Math.floor(Math.random() * servers.length)];
-		var urlBase = "http://" + server.Host;
+		var urlBase = 'http://' + server.Host;
 		var vhost = server.vhost || server.Host;
 
 		self.getCDNAuthToken(appID, depotID, vhost, function(err, token, expires) {
@@ -196,7 +196,7 @@ SteamUser.prototype.getRawManifest = function(appID, depotID, manifestID, callba
 				return;
 			}
 
-			download(urlBase + "/depot/" + depotID + "/manifest/" + manifestID + "/5" + token, vhost, function(err, res) {
+			download(urlBase + '/depot/' + depotID + '/manifest/' + manifestID + '/5' + token, vhost, function(err, res) {
 				if (err) {
 					callback(err);
 					return;
@@ -244,7 +244,7 @@ SteamUser.prototype.downloadChunk = function(appID, depotID, chunkSha1, contentS
 	}
 
 	function performDownload() {
-		var urlBase = "http://" + contentServer.Host;
+		var urlBase = 'http://' + contentServer.Host;
 		var vhost = contentServer.vhost || contentServer.Host;
 
 		self.getCDNAuthToken(appID, depotID, vhost, function(err, token, expires) {
@@ -259,7 +259,7 @@ SteamUser.prototype.downloadChunk = function(appID, depotID, chunkSha1, contentS
 					return;
 				}
 
-				download(urlBase + "/depot/" + depotID + "/chunk/" + chunkSha1 + token, vhost, function(err, res) {
+				download(urlBase + '/depot/' + depotID + '/chunk/' + chunkSha1 + token, vhost, function(err, res) {
 					if (err) {
 						callback(err);
 						return;
@@ -279,7 +279,7 @@ SteamUser.prototype.downloadChunk = function(appID, depotID, chunkSha1, contentS
 						var hash = require('crypto').createHash('sha1');
 						hash.update(result);
 						if (hash.digest('hex') != chunkSha1) {
-							callback(new Error("Checksum mismatch"));
+							callback(new Error('Checksum mismatch'));
 							return;
 						}
 
@@ -307,7 +307,7 @@ SteamUser.prototype.downloadFile = function(appID, depotID, fileManifest, output
 	}
 
 	if (fileManifest.flags & SteamUser.EDepotFileFlag.Directory) {
-		throw new Error("Cannot download a directory");
+		throw new Error('Cannot download a directory');
 	}
 
 	var numWorkers = 4;
@@ -339,7 +339,7 @@ SteamUser.prototype.downloadFile = function(appID, depotID, fileManifest, output
 		}
 
 		if (outputFilePath) {
-			fs.open(outputFilePath, "w", function(err, fd) {
+			fs.open(outputFilePath, 'w', function(err, fd) {
 				if (err) {
 					callback(err);
 					return;
@@ -448,7 +448,7 @@ SteamUser.prototype.downloadFile = function(appID, depotID, fileManifest, output
 
 						hash = hash.read();
 						if (hash.toString('hex') != fileManifest.sha_content) {
-							callback(new Error("File checksum mismatch"));
+							callback(new Error('File checksum mismatch'));
 						} else {
 							callback(null);
 						}
@@ -458,7 +458,7 @@ SteamUser.prototype.downloadFile = function(appID, depotID, fileManifest, output
 				hash = require('crypto').createHash('sha1');
 				hash.update(downloadBuffer);
 				if (hash.digest('hex') != fileManifest.sha_content) {
-					callback(new Error("File checksum mismatch"));
+					callback(new Error('File checksum mismatch'));
 					return;
 				}
 
@@ -485,7 +485,7 @@ SteamUser.prototype.downloadFile = function(appID, depotID, fileManifest, output
  * @param {function} callback - First arg is Error|null, second is an object mapping branch names to their decryption keys
  */
 SteamUser.prototype.getAppBetaDecryptionKeys = function(appID, password, callback) {
-	this._send(SteamUser.EMsg.ClientCheckAppBetaPassword, {"app_id": appID, "betapassword": password}, function(body) {
+	this._send(SteamUser.EMsg.ClientCheckAppBetaPassword, {'app_id': appID, 'betapassword': password}, function(body) {
 		if (body.eresult != SteamUser.EResult.OK) {
 			callback(Helpers.eresultError(body.eresult));
 			return;
@@ -531,18 +531,18 @@ function download(url, hostHeader, destinationFilename, callback) {
 	}
 
 	var options = require('url').parse(url);
-	options.method = "GET";
+	options.method = 'GET';
 	options.headers = {
-		"Host": hostHeader,
-		"Accept": "text/html,*/*;q=0.9",
-		"Accept-Encoding": "gzip,identity,*;q=0",
-		"Accept-Charset": "ISO-8859-1,utf-8,*;q=0.7",
-		"User-Agent": "Valve/Steam HTTP Client 1.0"
+		'Host': hostHeader,
+		'Accept': 'text/html,*/*;q=0.9',
+		'Accept-Encoding': 'gzip,identity,*;q=0',
+		'Accept-Charset': 'ISO-8859-1,utf-8,*;q=0.7',
+		'User-Agent': 'Valve/Steam HTTP Client 1.0'
 	};
 
 	var req = require('http').request(options, function(res) {
 		if (res.statusCode != 200) {
-			callback(new Error("HTTP error " + res.statusCode));
+			callback(new Error('HTTP error ' + res.statusCode));
 			return;
 		}
 
@@ -574,11 +574,11 @@ function download(url, hostHeader, destinationFilename, callback) {
 				dataBuffer = Buffer.concat([dataBuffer, chunk]);
 			}
 
-			callback(null, {"type": "progress", "receivedBytes": receivedBytes, "totalSizeBytes": totalSizeBytes});
+			callback(null, {'type': 'progress', 'receivedBytes': receivedBytes, 'totalSizeBytes': totalSizeBytes});
 		});
 
 		stream.on('end', function() {
-			callback(null, {"type": "complete", "data": dataBuffer});
+			callback(null, {'type': 'complete', 'data': dataBuffer});
 		});
 	});
 
@@ -597,7 +597,7 @@ function unzip(data, callback) {
 
 		data.skip(2); // header
 		if (String.fromCharCode(data.readByte()) != 'a') {
-			callback(new Error("Expected VZip version 'a'"));
+			callback(new Error('Expected VZip version \'a\''));
 		}
 
 		data.skip(4); // either a timestamp or a CRC; either way, forget it
@@ -610,7 +610,7 @@ function unzip(data, callback) {
 		var decompressedCrc = data.readUint32();
 		var decompressedSize = data.readUint32();
 		if (data.readUint16() != VZIP_FOOTER) {
-			callback(new Error("Didn't see expected VZip footer"));
+			callback(new Error('Didn\'t see expected VZip footer'));
 		}
 
 		var uncompressedSizeBuffer = new Buffer(8);
@@ -627,12 +627,12 @@ function unzip(data, callback) {
 
 			// Verify the result
 			if (decompressedSize != result.length) {
-				callback(new Error("Decompressed size was not valid"));
+				callback(new Error('Decompressed size was not valid'));
 				return;
 			}
 
 			if (crc32.unsigned(result) != decompressedCrc) {
-				callback(new Error("CRC check failed on decompressed data"));
+				callback(new Error('CRC check failed on decompressed data'));
 				return;
 			}
 
