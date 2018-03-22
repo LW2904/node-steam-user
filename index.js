@@ -22,6 +22,12 @@ try {
 	// It's okay if it isn't there
 }
 
+/**
+ * Constructs a new SteamUser
+ * @constructor
+ * @param {Steam} [client] 
+ * @param {object} options 
+ */
 function SteamUser(client, options) {
 	if (client && client.constructor.name !== 'SteamClient' && client.constructor.name !== 'CMClient') {
 		options = client;
@@ -49,7 +55,7 @@ function SteamUser(client, options) {
 	this.myNicknames = {};
 	this.steamServers = {};
 	this.contentServersReady = false;
-	this.playingState = {"blocked": false, "appid": 0};
+	this.playingState = {'blocked': false, 'appid': 0};
 	this._playingBlocked = false;
 
 	this._gcTokens = []; // game connect tokens
@@ -65,9 +71,9 @@ function SteamUser(client, options) {
 	// App and package cache
 	this._changelistUpdateTimer = null;
 	this.picsCache = {
-		"changenumber": 0,
-		"apps": {},
-		"packages": {}
+		'changenumber': 0,
+		'apps': {},
+		'packages': {}
 	};
 
 	this._sentry = null;
@@ -75,16 +81,16 @@ function SteamUser(client, options) {
 	this.options = options || {};
 
 	var defaultOptions = {
-		"autoRelogin": true,
-		"singleSentryfile": false,
-		"promptSteamGuardCode": true,
-		"machineIdType": SteamUser.EMachineIDType.AccountNameGenerated,
-		"machineIdFormat": ["SteamUser Hash BB3 {account_name}", "SteamUser Hash FF2 {account_name}", "SteamUser Hash 3B3 {account_name}"],
-		"enablePicsCache": false,
-		"picsCacheAll": false,
-		"changelistUpdateInterval": 60000,
-		"saveAppTickets": true,
-		"debug": false
+		'autoRelogin': true,
+		'singleSentryfile': false,
+		'promptSteamGuardCode': true,
+		'machineIdType': SteamUser.EMachineIDType.AccountNameGenerated,
+		'machineIdFormat': ['SteamUser Hash BB3 {account_name}', 'SteamUser Hash FF2 {account_name}', 'SteamUser Hash 3B3 {account_name}'],
+		'enablePicsCache': false,
+		'picsCacheAll': false,
+		'changelistUpdateInterval': 60000,
+		'saveAppTickets': true,
+		'debug': false
 	};
 
 	for (var i in defaultOptions) {
@@ -99,11 +105,11 @@ function SteamUser(client, options) {
 
 	if (!this.options.dataDirectory && this.options.dataDirectory !== null) {
 		if (process.env.OPENSHIFT_DATA_DIR) {
-			this.options.dataDirectory = process.env.OPENSHIFT_DATA_DIR + "/node-steamuser";
+			this.options.dataDirectory = process.env.OPENSHIFT_DATA_DIR + '/node-steamuser';
 		} else {
 			this.options.dataDirectory = (new AppDirectory({
-				"appName": "node-steamuser",
-				"appAuthor": "doctormckay"
+				'appName': 'node-steamuser',
+				'appAuthor': 'doctormckay'
 			})).userData();
 		}
 	}
@@ -120,12 +126,12 @@ function SteamUser(client, options) {
 			return; // We've already handled this
 		}
 
-		self._handleLogOff(e.eresult || SteamUser.EResult.NoConnection, e.message || "NoConnection");
+		self._handleLogOff(e.eresult || SteamUser.EResult.NoConnection, e.message || 'NoConnection');
 	});
 
 	this.client.on('servers', function(servers) {
 		if (self.storage) {
-			self.storage.writeFile('servers.json', JSON.stringify(servers, null, "\t"));
+			self.storage.writeFile('servers.json', JSON.stringify(servers, null, '\t'));
 		}
 
 		if (!client) {
@@ -140,23 +146,23 @@ SteamUser.prototype.setOption = function(option, value) {
 
 	// Handle anything that needs to happen when particular options update
 	switch (option) {
-		case 'dataDirectory':
-			if (!this.storage) {
-				this.storage = new FileStorage(value);
-			} else {
-				this.storage.directory = value;
-			}
+	case 'dataDirectory':
+		if (!this.storage) {
+			this.storage = new FileStorage(value);
+		} else {
+			this.storage.directory = value;
+		}
 
-			break;
+		break;
 
-		case 'enablePicsCache':
-			this._resetChangelistUpdateTimer();
-			this._getLicenseInfo();
-			break;
+	case 'enablePicsCache':
+		this._resetChangelistUpdateTimer();
+		this._getLicenseInfo();
+		break;
 
-		case 'changelistUpdateInterval':
-			this._resetChangelistUpdateTimer();
-			break;
+	case 'changelistUpdateInterval':
+		this._resetChangelistUpdateTimer();
+		break;
 	}
 };
 
